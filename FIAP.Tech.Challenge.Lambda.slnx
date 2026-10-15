@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="README.md" />
+    <File Path="Dockerfile" />
+    <File Path=".gitignore" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/FIAP.Tech.Challenge.Lambda/FIAP.Tech.Challenge.Lambda.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FIAP.Tech.Challenge.Lambda.Tests/FIAP.Tech.Challenge.Lambda.Tests.csproj" />
+  </Folder>
+</Solution>

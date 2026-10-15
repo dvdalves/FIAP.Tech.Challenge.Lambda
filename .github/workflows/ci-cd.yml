@@ -1,0 +1,127 @@
+name: CI/CD Pipeline - Authentication Serverless Function
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  DOCKER_IMAGE_NAME: "oficina-auth-lambda"
+  AWS_REGION: "us-east-1"
+
+jobs:
+  # ============================================================================
+  # 1. BUILD & TESTES AUTOMATIZADOS (.NET)
+  # ============================================================================
+  build-and-test:
+    name: 🧪 Build & Testes Automatizados (.NET 10)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup .NET SDK ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: 📦 Restaurar Dependências
+        run: dotnet restore FIAP.Tech.Challenge.Lambda.slnx
+
+      - name: 🔨 Compilar Solução
+        run: dotnet build FIAP.Tech.Challenge.Lambda.slnx --no-restore --configuration Release
+
+      - name: 🧪 Executar Testes Unitários
+        run: dotnet test FIAP.Tech.Challenge.Lambda.slnx --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
+
+  # ============================================================================
+  # 2. VALIDAÇÃO DE INFRAESTRUTURA (TERRAFORM)
+  # ============================================================================
+  terraform-validate:
+    name: 🏗️ Terraform Format & Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.8.0"
+
+      - name: 🔍 Terraform Format Check
+        run: terraform -chdir=infra fmt -check
+
+      - name: 🔍 Terraform Init & Validate
+        run: |
+          terraform -chdir=infra init -backend=false
+          terraform -chdir=infra validate
+
+  # ============================================================================
+  # 3. CONTEINERIZAÇÃO (DOCKER BUILD)
+  # ============================================================================
+  docker-build:
+    name: 🐳 Docker Build & Validação
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: 🛠️ Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🐳 Compilar Imagem Docker da Lambda
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: false
+          tags: ${{ env.DOCKER_IMAGE_NAME }}:latest
+
+  # ============================================================================
+  # 4. DEPLOY AUTOMÁTICO (AWS LAMBDA & API GATEWAY)
+  # ============================================================================
+  deploy:
+    name: 🚀 Deploy AWS Lambda & API Gateway
+    needs: [build-and-test, terraform-validate, docker-build]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
+    steps:
+      - name: 📥 Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup .NET SDK ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: 📦 Publicar Binários da Lambda
+        run: |
+          dotnet publish src/FIAP.Tech.Challenge.Lambda/FIAP.Tech.Challenge.Lambda.csproj -c Release -o ./publish
+          cd ./publish && zip -r ../infra/lambda_payload.zip . && cd ..
+
+      - name: 🔑 Configurar Credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: ⚙️ Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.8.0"
+
+      - name: 🚀 Terraform Apply
+        run: |
+          cd infra
+          terraform init
+          terraform apply -auto-approve -var="db_connection_string=${{ secrets.DB_CONNECTION_STRING }}" -var="jwt_secret_key=${{ secrets.JWT_SECRET_KEY }}"

@@ -1,0 +1,118 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+    "name": "FIAP Tech Challenge - Auth Lambda API",
+    "description": "Coleção de testes para a Function Serverless de Autenticação por CPF (Fase 3)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Autenticar com CPF Válido (Gerar Token JWT)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"cpf\": \"52998224725\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/token",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "token"
+          ]
+        },
+        "description": "Valida o CPF, consulta a existência na base PostgreSQL e gera um token JWT válido contendo os dados do cliente e role Cliente."
+      },
+      "response": []
+    },
+    {
+      "name": "2. Autenticar com CPF Inválido (Dígito Incorreto)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"cpf\": \"111.111.111-11\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/token",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "token"
+          ]
+        },
+        "description": "Rejeição imediata por algoritmo de validação de CPF (400 Bad Request)."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Autenticar com CPF Válido Inexistente na Base",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"cpf\": \"98765432100\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/token",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "token"
+          ]
+        },
+        "description": "CPF matematicamente válido mas inexistente na base de dados (404 Not Found)."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+aws_region           = "us-east-1"
+environment          = "production"
+function_name        = "oficina-auth-lambda"
+jwt_secret_key       = "SuperSecretSecurityKeyOficinaMecanica2026!" # Em produção, injetar via GitHub Secrets
+jwt_expiration_hours = 2
+db_connection_string = "Host=<RDS_ENDPOINT>;Port=5432;Database=oficina_db;Username=oficina_admin;Password=<SUA_SENHA_AQUI>"
+mock_database        = "false"
+api_name             = "oficina-auth-api-gateway"

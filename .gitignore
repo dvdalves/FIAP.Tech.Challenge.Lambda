@@ -1,0 +1,45 @@
+# ==============================================================================
+# .NET & Visual Studio / Rider
+# ==============================================================================
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.idea/
+.vs/
+*.dotSettings.user
+
+# ==============================================================================
+# Test Coverage & Artifacts
+# ==============================================================================
+TestResults/
+[Tt]est[Rr]esult*
+coverage/
+*.cobertura.xml
+*.opencover.xml
+
+# ==============================================================================
+# Docker & OS
+# ==============================================================================
+.DS_Store
+Thumbs.db
+
+# ==============================================================================
+# Terraform & Cloud Secrets
+# ==============================================================================
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+!*.tfvars.example
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+tfplan
