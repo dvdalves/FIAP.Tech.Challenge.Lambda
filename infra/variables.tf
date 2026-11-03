@@ -1,7 +1,7 @@
 variable "azure_region" {
   description = "Região do Azure para deploy dos recursos"
   type        = string
-  default     = "East US"
+  default     = "North Central US"
 }
 
 variable "resource_group_name" {

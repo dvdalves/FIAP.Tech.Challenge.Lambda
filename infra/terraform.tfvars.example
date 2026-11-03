@@ -1,4 +1,4 @@
-azure_region                = "East US"
+azure_region                = "North Central US"
 environment                 = "production"
 resource_group_name         = "fiap-tech-challenge-rg"
 function_name               = "oficina-auth-service"
