@@ -1,19 +1,19 @@
-output "api_gateway_endpoint" {
-  description = "URL base do AWS API Gateway para chamadas de autenticação"
-  value       = aws_apigatewayv2_stage.default.invoke_url
+output "auth_service_endpoint" {
+  description = "URL base do serviço serverless de autenticação"
+  value       = "https://${azurerm_container_app.auth.latest_revision_fqdn}"
 }
 
 output "auth_token_url" {
   description = "URL completa para emissão de token via CPF"
-  value       = "${aws_apigatewayv2_stage.default.invoke_url}auth/token"
+  value       = "https://${azurerm_container_app.auth.latest_revision_fqdn}/auth/token"
 }
 
-output "lambda_function_arn" {
-  description = "ARN da AWS Lambda Function"
-  value       = aws_lambda_function.auth_lambda.arn
+output "container_app_id" {
+  description = "ID do serviço serverless de autenticação"
+  value       = azurerm_container_app.auth.id
 }
 
-output "lambda_function_name" {
-  description = "Nome da AWS Lambda Function"
-  value       = aws_lambda_function.auth_lambda.function_name
+output "container_app_environment_id" {
+  description = "ID do ambiente Azure Container Apps"
+  value       = azurerm_container_app_environment.main.id
 }

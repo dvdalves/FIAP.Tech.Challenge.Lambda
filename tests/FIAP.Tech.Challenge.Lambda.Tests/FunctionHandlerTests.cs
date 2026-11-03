@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Amazon.Lambda.APIGatewayEvents;
 using FIAP.Tech.Challenge.Lambda.Models;
 using FIAP.Tech.Challenge.Lambda.Services;
 using FluentAssertions;
@@ -132,40 +131,4 @@ public class FunctionHandlerTests
         response.Cliente.Nome.Should().Be("Carlos Teste");
     }
 
-    [Fact]
-    public async Task FunctionHandlerAsync_ComPayloadV2_DeveRetornarHeadersCorsERespostaCorreta()
-    {
-        // Arrange
-        var sut = CreateSut();
-        var cpfValido = "52998224725";
-        var request = new APIGatewayHttpApiV2ProxyRequest
-        {
-            Body = JsonSerializer.Serialize(new { cpf = cpfValido })
-        };
-
-        var cliente = new ClienteAuthDto
-        {
-            Id = Guid.NewGuid(),
-            Nome = "Carlos Teste",
-            Cpf = cpfValido,
-            Email = "carlos@teste.com"
-        };
-
-        _databaseService.ObterClientePorCpfAsync(cpfValido).Returns(Task.FromResult<ClienteAuthDto?>(cliente));
-        _jwtTokenService.GerarToken(cliente, out Arg.Any<int>())
-            .Returns(x =>
-            {
-                x[1] = 7200;
-                return "mock-jwt-token-v2";
-            });
-
-        // Act
-        var response = await sut.FunctionHandlerAsync(request);
-
-        // Assert
-        response.StatusCode.Should().Be(200);
-        response.Headers["Content-Type"].Should().Be("application/json");
-        response.Headers["Access-Control-Allow-Origin"].Should().Be("*");
-        response.Body.Should().Contain("mock-jwt-token-v2");
-    }
 }

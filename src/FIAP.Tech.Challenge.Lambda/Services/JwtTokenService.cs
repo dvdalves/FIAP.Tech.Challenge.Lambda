@@ -15,7 +15,8 @@ public class JwtTokenService : IJwtTokenService
     {
         _secretKey = secretKey
             ?? Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
-            ?? "SuperSecretSecurityKeyOficinaMecanica2026!";
+            ?? throw new InvalidOperationException(
+                "JWT_SECRET_KEY deve ser configurada por um mecanismo seguro.");
 
         var envExp = Environment.GetEnvironmentVariable("JWT_EXPIRATION_HOURS");
         _expirationHours = expirationHours

@@ -9,8 +9,11 @@ on:
 
 env:
   DOTNET_VERSION: "10.0.x"
-  DOCKER_IMAGE_NAME: "oficina-auth-lambda"
-  AWS_REGION: "us-east-1"
+  DOCKER_IMAGE_NAME: "ghcr.io/dvdalves/fiap-tech-challenge-auth"
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   # ============================================================================
@@ -77,19 +80,28 @@ jobs:
       - name: 🛠️ Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: 🔐 Login no GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: 🐳 Compilar Imagem Docker da Lambda
         uses: docker/build-push-action@v5
         with:
           context: .
           file: Dockerfile
-          push: false
-          tags: ${{ env.DOCKER_IMAGE_NAME }}:latest
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE_NAME }}:latest
+            ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
 
   # ============================================================================
-  # 4. DEPLOY AUTOMÁTICO (AWS LAMBDA & API GATEWAY)
+  # 4. DEPLOY AUTOMÁTICO (AZURE CONTAINER APPS)
   # ============================================================================
   deploy:
-    name: 🚀 Deploy AWS Lambda & API Gateway
+    name: 🚀 Deploy Azure Container Apps
     needs: [build-and-test, terraform-validate, docker-build]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
@@ -98,22 +110,10 @@ jobs:
       - name: 📥 Checkout do Repositório
         uses: actions/checkout@v4
 
-      - name: ⚙️ Setup .NET SDK ${{ env.DOTNET_VERSION }}
-        uses: actions/setup-dotnet@v4
+      - name: 🔑 Autenticar no Azure
+        uses: azure/login@v2
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: 📦 Publicar Binários da Lambda
-        run: |
-          dotnet publish src/FIAP.Tech.Challenge.Lambda/FIAP.Tech.Challenge.Lambda.csproj -c Release -o ./publish
-          cd ./publish && zip -r ../infra/lambda_payload.zip . && cd ..
-
-      - name: 🔑 Configurar Credenciais AWS
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: ⚙️ Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -122,6 +122,8 @@ jobs:
 
       - name: 🚀 Terraform Apply
         run: |
-          cd infra
-          terraform init
-          terraform apply -auto-approve -var="db_connection_string=${{ secrets.DB_CONNECTION_STRING }}" -var="jwt_secret_key=${{ secrets.JWT_SECRET_KEY }}"
+          terraform -chdir=infra init
+          terraform -chdir=infra apply -auto-approve \
+            -var="container_image=${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}" \
+            -var="db_connection_string=${{ secrets.DB_CONNECTION_STRING }}" \
+            -var="jwt_secret_key=${{ secrets.JWT_SECRET_KEY }}"

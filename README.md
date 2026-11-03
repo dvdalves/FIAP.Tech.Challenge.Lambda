@@ -2,7 +2,7 @@
 
 [![CI/CD Pipeline](https://github.com/dvdalves/FIAP.Tech.Challenge.Lambda/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/dvdalves/FIAP.Tech.Challenge.Lambda/actions/workflows/ci-cd.yml)
 
-Repositório responsável pela **Function Serverless (AWS Lambda)** de autenticação por CPF e integração com **AWS API Gateway**, atendendo aos requisitos obrigatórios da **Fase 3 do Tech Challenge SOAT - FIAP**.
+Repositório responsável pela **Function Serverless (Azure Container Apps)** de autenticação por CPF e integração com **Azure API Management**, atendendo aos requisitos obrigatórios da **Fase 3 do Tech Challenge SOAT - FIAP**.
 
 ---
 
@@ -30,7 +30,7 @@ Repositório responsável pela **Function Serverless (AWS Lambda)** de autentica
 O principal objetivo desta Function Serverless é desacoplar a autenticação dos clientes do monolito principal, fornecendo uma camada elástica e serverless capaz de:
 
 1. **Validar o CPF do cliente**: Aplicação rigorosa das regras oficiais de formatação e cálculo dos dois dígitos verificadores (Módulo 11) estabelecidas pela Receita Federal do Brasil, descartando requisições com dados inconsistentes antes de onerar a camada de banco.
-2. **Consultar o cadastro e status do cliente**: Conexão com o banco de dados gerenciado PostgreSQL (RDS) para verificar a existência e a situação cadastral do cliente na tabela `Clientes`.
+2. **Consultar o cadastro e status do cliente**: Conexão com o banco de dados gerenciado PostgreSQL (PostgreSQL Flexível) para verificar a existência e a situação cadastral do cliente na tabela `Clientes`.
 3. **Emitir Token JWT Assinado**: Geração de um token JWT contendo as *claims* de identificação (`sub`, `name`, `cpf`, `client_name`, `email`, `role = "Cliente"`, `status`), assinado com chave simétrica HMAC-SHA256 compartilhada com a API principal em execução no Kubernetes.
 
 ---
@@ -39,12 +39,12 @@ O principal objetivo desta Function Serverless é desacoplar a autenticação do
 
 | Componente | Tecnologia | Detalhes |
 | :--- | :--- | :--- |
-| **Linguagem & Runtime** | C# / .NET 10 | Executável otimizado com suporte a AWS Lambda e Minimal API local |
-| **Serverless Provider** | AWS Lambda | Execução sob demanda com escalabilidade automática |
-| **API Gateway** | AWS API Gateway (HTTP API v2) | Roteamento, controle de CORS, throttling e logs no CloudWatch |
-| **Driver de Banco de Dados** | Npgsql 9.x | Conexão de alta performance com pooling assíncrono ao PostgreSQL RDS |
+| **Linguagem & Runtime** | C# / .NET 10 | Executável otimizado com suporte a Azure Container Apps e Minimal API local |
+| **Serverless Provider** | Azure Container Apps | Execução sob demanda com escalabilidade automática |
+| **API Management** | Azure API Management (HTTP API v2) | Roteamento, controle de CORS, throttling e logs no Azure Monitor |
+| **Driver de Banco de Dados** | Npgsql 9.x | Conexão de alta performance com pooling assíncrono ao PostgreSQL PostgreSQL Flexível |
 | **Segurança & Criptografia** | JWT (HMAC-SHA256) | `System.IdentityModel.Tokens.Jwt` e `Microsoft.IdentityModel.Tokens` |
-| **Infraestrutura como Código** | Terraform (>= 1.5.0) | Provisionamento automatizado do API Gateway, Lambda, IAM Roles e permissões |
+| **Infraestrutura como Código** | Terraform (>= 1.5.0) | Provisionamento automatizado do Azure Container Apps e Azure API Management |
 | **Conteinerização** | Docker | Imagem multi-stage baseada em Alpine Linux |
 | **Testes Automatizados** | xUnit, FluentAssertions, NSubstitute | Cobertura abrangente com testes unitários |
 | **CI/CD** | GitHub Actions | Testes, validação Terraform, Docker build e deploy contínuo |
@@ -59,9 +59,9 @@ Abaixo está o diagrama de sequência detalhando o fluxo de validação e emiss�
 sequenceDiagram
     autonumber
     actor Cliente as 📱 Cliente / Frontend
-    participant APIGW as 🌐 AWS API Gateway
-    participant Lambda as ⚡ AWS Lambda (Auth)
-    participant RDS as 🗄️ PostgreSQL (RDS)
+    participant APIGW as 🌐 Azure API Management
+    participant Lambda as ⚡ Azure Container Apps (Auth)
+    participant PostgreSQL Flexível as 🗄️ PostgreSQL (PostgreSQL Flexível)
     participant API as 🚢 API Oficina (K8s)
 
     Cliente->>APIGW: POST /auth/token { "cpf": "52998224725" }
@@ -71,7 +71,7 @@ sequenceDiagram
         Lambda-->>APIGW: 400 Bad Request { "mensagem": "CPF informado é inválido." }
         APIGW-->>Cliente: Retorno 400 Bad Request
     else CPF Válido
-        Lambda->>RDS: SELECT * FROM "Clientes" WHERE "Cpf" = @cpf
+        Lambda->>PostgreSQL Flexível: SELECT * FROM "Clientes" WHERE "Cpf" = @cpf
         alt Cliente Não Encontrado
             Lambda-->>APIGW: 404 Not Found { "mensagem": "Cliente não encontrado." }
             APIGW-->>Cliente: Retorno 404 Not Found
@@ -179,7 +179,7 @@ dotnet test FIAP.Tech.Challenge.Lambda.slnx --verbosity normal
 
 ## 6. Provisionamento da Infraestrutura com Terraform
 
-Os manifests em [`infra/`](infra/) provisionam automaticamente a AWS Lambda, o AWS API Gateway (HTTP API v2), as rotas `/auth/token` e as permissões de invocação IAM:
+Os manifests em [`infra/`](infra/) provisionam automaticamente o Azure Container Apps, o Azure API Management e o endpoint `/auth/token`:
 
 ```bash
 cd infra
@@ -215,7 +215,7 @@ A pipeline implementada em [`.github/workflows/ci-cd.yml`](.github/workflows/ci-
 1. **Build & Testes**: Restaura pacotes, compila o código em .NET 10 e executa todos os testes unitários com coleta de cobertura de código.
 2. **Terraform Validation**: Checa a formatação (`terraform fmt -check`) e valida a sintaxe dos manifests (`terraform validate`).
 3. **Docker Build**: Constrói a imagem Docker para validar a integridade do empacotamento.
-4. **Deploy Automatizado**: Ao mesclar com a branch principal (`main`), compila o pacote de produção e aplica as alterações na AWS via Terraform.
+4. **Deploy Automatizado**: Ao mesclar com a branch principal (`main`), compila o pacote de produção e aplica as alterações na Azure via Terraform.
 
 ---
 
