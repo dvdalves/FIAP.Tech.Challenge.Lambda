@@ -1,7 +1,13 @@
-variable "aws_region" {
-  description = "Região da AWS para deploy dos recursos"
+variable "azure_region" {
+  description = "Região do Azure para deploy dos recursos"
   type        = string
-  default     = "us-east-1"
+  default     = "East US"
+}
+
+variable "resource_group_name" {
+  description = "Resource Group do Azure"
+  type        = string
+  default     = "fiap-tech-challenge-rg"
 }
 
 variable "environment" {
@@ -11,16 +17,28 @@ variable "environment" {
 }
 
 variable "function_name" {
-  description = "Nome da função AWS Lambda"
+  description = "Nome do serviço serverless de autenticação no Azure Container Apps"
   type        = string
-  default     = "oficina-auth-lambda"
+  default     = "oficina-auth-auth"
+}
+
+variable "container_environment_name" {
+  description = "Nome do ambiente Azure Container Apps"
+  type        = string
+  default     = "oficina-auth-env"
+}
+
+variable "container_image" {
+  description = "Imagem OCI da autenticação publicada em um registry"
+  type        = string
+  default     = "mcr.microsoft.com/dotnet/aspnet:8.0"
 }
 
 variable "jwt_secret_key" {
   description = "Chave secreta para assinatura dos tokens JWT"
   type        = string
   sensitive   = true
-  default     = "SuperSecretSecurityKeyOficinaMecanica2026!"
+  default     = ""
 }
 
 variable "jwt_expiration_hours" {
@@ -30,7 +48,7 @@ variable "jwt_expiration_hours" {
 }
 
 variable "db_connection_string" {
-  description = "Connection string do banco de dados PostgreSQL RDS"
+  description = "Connection string do Azure Database for PostgreSQL"
   type        = string
   sensitive   = true
   default     = ""
@@ -43,7 +61,7 @@ variable "mock_database" {
 }
 
 variable "api_name" {
-  description = "Nome do API Gateway HTTP API"
+  description = "Nome da API de autenticação no Azure API Management"
   type        = string
-  default     = "oficina-auth-api-gateway"
+  default     = "oficina-auth-api"
 }
