@@ -1,36 +1,29 @@
 # Azure Container Apps fornece execução serverless com escala para zero para
 # o serviço de autenticação serverless.
 
-resource "azurerm_resource_group" "main" {
-  name     = var.resource_group_name
-  location = var.azure_region
-  tags = {
-    Project     = "FIAP-Tech-Challenge"
-    Environment = var.environment
-    ManagedBy   = "Terraform"
-    Repository  = "FIAP.Tech.Challenge.Lambda"
-  }
+data "azurerm_resource_group" "main" {
+  name = var.resource_group_name
 }
 
 resource "azurerm_log_analytics_workspace" "main" {
   name                = "${var.function_name}-logs"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+  location            = data.azurerm_resource_group.main.location
+  resource_group_name = data.azurerm_resource_group.main.name
   sku                 = "PerGB2018"
   retention_in_days   = 30
 }
 
 resource "azurerm_container_app_environment" "main" {
   name                       = var.container_environment_name
-  location                   = azurerm_resource_group.main.location
-  resource_group_name        = azurerm_resource_group.main.name
+  location                   = data.azurerm_resource_group.main.location
+  resource_group_name        = data.azurerm_resource_group.main.name
   log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
 }
 
 resource "azurerm_container_app" "auth" {
   name                         = var.function_name
   container_app_environment_id = azurerm_container_app_environment.main.id
-  resource_group_name          = azurerm_resource_group.main.name
+  resource_group_name          = data.azurerm_resource_group.main.name
   revision_mode                = "Single"
 
   template {
